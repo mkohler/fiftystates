@@ -9,6 +9,10 @@ import sys
 sys.path.append('./scripts')
 from pyutils.legislation import LegislationScraper, NoDataForYear
 
+#
+# XXX: Using s.replace does not work with BeautifulSoup 3.0.7. It won't let
+# you do s.replace with a Tag object.
+#
 def clean_legislators(s):
     s = s.replace('&nbsp;', ' ').strip()
     return [l.strip() for l in s.split(';') if l]
