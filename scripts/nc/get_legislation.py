@@ -2,6 +2,7 @@
 
 import urllib
 from BeautifulSoup import BeautifulSoup
+import logging
 
 # ugly hack
 import sys
@@ -17,6 +18,7 @@ class NCLegislationScraper(LegislationScraper):
     state = 'nc'
 
     def get_bill_info(self, session, bill_id):
+        logging.info('get_bill_info')
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (session, bill_id)
 
         # parse the bill data page, finding the latest html text
@@ -31,6 +33,7 @@ class NCLegislationScraper(LegislationScraper):
         bill_title = bill_soup.findAll('div', style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;")[0].contents[0]
 
         self.add_bill(chamber, session, bill_id, bill_title)
+        logging.info('Processing chamber %s, session %s, bill_id %s, bill_title %s' % (chamber, session, bill_id, bill_title))
 
         # get all versions
         links = bill_soup.findAll('a')
@@ -44,6 +47,7 @@ class NCLegislationScraper(LegislationScraper):
         tables = bill_soup.findAll('table')
         sponsor_rows = tables[6].findAll('tr')
         sponsors = clean_legislators(sponsor_rows[1].td.contents[0])
+        logging.info('sponsors %s' % sponsors)
         for leg in sponsors:
             self.add_sponsorship(chamber, session, bill_id, 'primary', leg)
         cosponsors = clean_legislators(sponsor_rows[2].td.contents[0])
@@ -68,6 +72,7 @@ class NCLegislationScraper(LegislationScraper):
             self.add_action(chamber, session, bill_id, action_chamber, action, date)
 
     def scrape_session(self, chamber, session):
+        logging.info('scrape_session')
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session, chamber)
         data = urllib.urlopen(url).read()
         soup = BeautifulSoup(data)
@@ -79,6 +84,7 @@ class NCLegislationScraper(LegislationScraper):
             self.get_bill_info(session, bill_id)
 
     def scrape_bills(self, chamber, year):
+        logging.info('scrape_bills')
         year_mapping = {
             '1985': ('1985',),
             '1986': ('1985E1',),
@@ -115,4 +121,5 @@ class NCLegislationScraper(LegislationScraper):
             self.scrape_session(chamber, session)
 
 if __name__ == '__main__':
+    logging.debug('Starting NCLegislationsScraper')
     NCLegislationScraper().run()
