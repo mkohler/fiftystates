@@ -1,6 +1,7 @@
 from optparse import make_option, OptionParser
 import datetime
 import csv
+import os
 
 class NoDataForYear(Exception):
     """ exception to be raised when no data exists for a given year """
@@ -71,7 +72,10 @@ class LegislationScraper(object):
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
 
-        bill_filename = 'data/%s/legislation.csv' % self.state
+        state_data_dir = os.path.join('data', self.state)
+        if not os.path.isdir(state_data_dir):
+            os.mkdir(state_data_dir)
+        bill_filename = os.path.join(state_data_dir, 'legislation.csv')
         self.bill_csv = csv.DictWriter(open(bill_filename, 'w'), 
                                        self.bill_fields, extrasaction='ignore')
 
