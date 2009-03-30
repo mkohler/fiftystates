@@ -75,12 +75,9 @@ class NCLegislationScraper(LegislationScraper):
         logging.info('scrape_session')
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session, chamber)
         data = urllib.urlopen(url).read()
-        soup = BeautifulSoup(data)
+        bill_ids = get_bills_from_session(data)
 
-        rows = soup.findAll('table')[5].findAll('tr')[1:]
-        for row in rows:
-            td = row.find('td')
-            bill_id = td.a.contents[0]
+        for bill_id in bill_ids:
             self.get_bill_info(session, bill_id)
 
     def scrape_bills(self, chamber, year):
@@ -116,9 +113,20 @@ class NCLegislationScraper(LegislationScraper):
 
         if year not in year_mapping:
             raise NoDataForYear(year)
-
+	
         for session in year_mapping[year]:
             self.scrape_session(chamber, session)
+
+def get_bills_from_session(session_html):
+    soup = BeautifulSoup(session_html)
+    rows = soup.findAll('table')[5].findAll('tr')[1:]
+    bill_ids = []
+    for row in rows:
+        td = row.find('td')
+        bill_id = td.a.contents[0]
+        bill_ids.append(bill_id)
+    return bill_ids
+
 
 if __name__ == '__main__':
     logging.debug('Starting NCLegislationsScraper')
