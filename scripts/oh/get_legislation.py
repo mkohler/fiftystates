@@ -58,17 +58,11 @@ class OHLegislationScraper(legislation.LegislationScraper):
             self.get_bill_info(session, bill_id)
 
     # Called by LegislationScraper base class.
+    #   chamber is either 'lower' or 'upper'.
     def scrape_bills(self, chamber, year):
         logging.info('scrape_bills')
-        year_mapping = {
-            '2009': ('2008','2009'),
-        }
-        chamber = {'lower':'House', 'upper':'Senate'}[chamber]
-
-        if year not in year_mapping:
-            raise legislation.NoDataForYear(year)
-	
-        for session in year_mapping[year]:
+        
+        for session in year_to_session(year):
             self.scrape_session(chamber, session)
 
 def get_bills_from_session(session_html):
@@ -80,6 +74,14 @@ def get_bills_from_session(session_html):
         bill_id = td.a.contents[0]
         bill_ids.append(bill_id)
     return bill_ids
+
+def make_url(session, chamber, bill_number):
+    if chamber == 'upper':
+        return ('http://www.legislature.state.oh.us/' +
+                 'bills.cfm?ID=%s_SB_%s' % (session, bill_number))
+    else:
+        return ( 'http://www.legislature.state.oh.us/' +
+                 'bills.cfm?ID=%s_HB_%s' % (session, bill_number))
 
 def year_to_session(year):
     # As defined on:
