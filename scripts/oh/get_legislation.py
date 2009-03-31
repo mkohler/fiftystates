@@ -3,6 +3,7 @@
 import urllib
 from BeautifulSoup import BeautifulSoup
 import logging
+import time
 
 # ugly hack
 import sys
@@ -11,21 +12,102 @@ import legislation
 
 logging.basicConfig(level=logging.DEBUG)
 
+# ToDo
+#
+#  Find a way to actually filter down the bills by year.
+class OhioBill(object):
+    def __init__(self, chamber, year, session, number):
+        self.chamber = chamber
+        self.year = year
+        self.session = session
+        self.number = number
+        self.id = self.make_id()
+        self.url = self.make_url_style1()
+        self.name = None
+        self.version_name = None
+        self.text = None
+
+    def make_id(self):
+        if self.chamber == 'lower':
+            id = 'HB %s' % self.number
+        else:
+            id = 'SB %s' % self.number
+        return id
+
+    def make_url_style1(self):
+        if self.chamber == 'lower':
+            id = 'HB_%s' % self.number
+        else:
+            id = 'SB_%s' % self.number
+
+        return ('http://www.legislature.state.oh.us/' +
+                'BillText%s/%s_%s_I_N.html' % 
+                (self.session, self.session, self.id))
+
+    def make_url_style2(self):
+        if self.chamber == 'upper':
+            return ( 'http://www.legislature.state.oh.us/' +
+                     'bills.cfm?ID=%s_HB_%s' % (self.session, self.number))
+        else:
+            return ('http://www.legislature.state.oh.us/' +
+                     'bills.cfm?ID=%s_SB_%s' % (self.session, self.number))
+
+    def retrieve_bill_text(self):
+        logging.info('Retrieving %s' % self.url)
+        self.text = urllib.urlopen(self.url).read()
+
+        if self.has_bill_text():
+            return
+
+        self.url = self.make_url_style2()
+        logging.info('First URL failed, trying another URL style...')
+        logging.info('Retrieving %s' % self.url)
+        self.text = urllib.urlopen(self.url).read()
+        if self.has_bill_text():
+            return
+
+        logging.warn('Could not find bill: chamber %s, year %s, number %s'
+                     % (self.chamber, self.year, self.number))
+        raise legislation.NoDataForYear(self.year)
+
+    def has_bill_text(self):
+        if not self.text:
+            return False
+        if 'could not be found' in self.text:
+            return False
+        if 'You have requested a page that does not exist' in self.text:
+            return False
+        if 'Bad Request' in self.text:
+            return False
+
+        return True
+
 class OHLegislationScraper(legislation.LegislationScraper):
     state = 'oh'
 
     # Called by LegislationScraper base class.
     #   chamber is either 'lower' or 'upper'.
     def scrape_bills(self, chamber, year):
-        self.scrape_session(chamber, year_to_session(year))
+        self.scrape_session(year, chamber, year_to_session(year))
 
-    def scrape_session(self, chamber, session):
-        logging.info('Scraping session %s %s' % (session, chamber))
+    def scrape_session(self, year, chamber, session):
+        logging.info('Scraping session %s %s house' % (session, chamber))
+        bill_number = 28
         while True:
-            bill_number = 1
-            url = make_url(chamber, session, bill_number)
-            bill_html = urllib.urlopen(url).read()
-            logging.debug(bill_html)
+            bill = OhioBill(chamber, year, session, bill_number)
+
+            bill.retrieve_bill_text()
+
+            f = open('data/oh/%s_%s_%s.html'
+                     % (session, chamber, bill_number), 'w')
+            f.write(bill.text)
+            f.close()
+
+            # Give the poor web server a break.
+            time.sleep(1)
+            bill_number += 1
+
+
 
 
 def parse_bill(session, chamber, bill_number, bill_html):
@@ -49,14 +131,6 @@ def parse_bill(session, chamber, bill_number, bill_html):
     # self.add_action(chamber, session, bill_id, action_chamber, action,
     # date)
 
-
-def make_url(session, chamber, bill_number):
-    if chamber == 'upper':
-        return ('http://www.legislature.state.oh.us/' +
-                 'bills.cfm?ID=%s_SB_%s' % (session, bill_number))
-    else:
-        return ( 'http://www.legislature.state.oh.us/' +
-                 'bills.cfm?ID=%s_HB_%s' % (session, bill_number))
 
 def year_to_session(year):
     # As defined on:
