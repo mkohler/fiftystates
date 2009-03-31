@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+import os
 import urllib
-from BeautifulSoup import BeautifulSoup
 import logging
 import time
+from BeautifulSoup import BeautifulSoup
 
 # ugly hack
 import sys
@@ -15,12 +16,14 @@ logging.basicConfig(level=logging.DEBUG)
 # ToDo
 #
 #  Find a way to actually filter down the bills by year.
+#  Terminate the session year.
 class OhioBill(object):
     def __init__(self, chamber, year, session, number):
         self.chamber = chamber
         self.year = year
         self.session = session
         self.number = number
+        self.filename = self.make_filename()
         self.id = self.make_id()
         self.url = self.make_url_style1()
         self.name = None
@@ -33,6 +36,10 @@ class OhioBill(object):
         else:
             id = 'SB %s' % self.number
         return id
+
+    def make_filename(self):
+        return 'data/oh/%s_%s_%s.html' % (self.session, self.chamber,
+                                          self.number)
 
     def make_url_style1(self):
         if self.chamber == 'lower':
@@ -79,8 +86,14 @@ class OhioBill(object):
             return False
         if 'Bad Request' in self.text:
             return False
-
         return True
+
+    def save_bill_text_as_file(self):
+        f = open(self.filename, 'w')
+        assert(self.text != None)
+        f.write(self.text)
+        f.close()
+
 
 class OHLegislationScraper(legislation.LegislationScraper):
     state = 'oh'
@@ -92,22 +105,20 @@ class OHLegislationScraper(legislation.LegislationScraper):
 
     def scrape_session(self, year, chamber, session):
         logging.info('Scraping session %s %s house' % (session, chamber))
-        bill_number = 28
+        bill_number = 1
         while True:
             bill = OhioBill(chamber, year, session, bill_number)
 
-            bill.retrieve_bill_text()
+            # If we don't have the bill, go get it and save it.
+            if not os.path.isfile(bill.filename):
+                bill.retrieve_bill_text()
+                bill.save_bill_text_as_file()
+                time.sleep(1)            # Give the poor web server a break.
+            else:
+                logging.info('Already have bill %s %s %s' %
+                             (chamber, year, bill_number))
 
-            f = open('data/oh/%s_%s_%s.html'
-                     % (session, chamber, bill_number), 'w')
-            f.write(bill.text)
-            f.close()
-
-            # Give the poor web server a break.
-            time.sleep(1)
             bill_number += 1
-
-
 
 
 def parse_bill(session, chamber, bill_number, bill_html):
