@@ -12,68 +12,43 @@ import legislation
 logging.basicConfig(level=logging.DEBUG)
 
 class OHLegislationScraper(legislation.LegislationScraper):
-
     state = 'oh'
-
-    def get_bill_info(self, session, bill_id):
-        logging.info('get_bill_info')
-        return
-
-        bill_detail_url = 'http://www.legislature.state.oh.us/BillText128/128_SB_1_PS_Y.html'
-
-        # parse the bill data page, finding the latest html text
-        if bill_id[0] == 'H':
-            chamber = 'lower'
-        else:
-            chamber = 'upper'
-
-        bill_data = urllib.urlopen(bill_detail_url).read()
-        bill_soup = BeautifulSoup(bill_data)
-
-        # XXX 
-        #
-        # self.add_bill(chamber, session, bill_id, bill_title)
-
-        # XXX
-        # self.add_bill_version(chamber, session, bill_id, version_name, version_url)
-
-        # XXX
-        # self.add_sponsorship(chamber, session, bill_id, 'primary', leg)
-
-        # XXX 
-        # self.add_sponsorship(chamber, session, bill_id, 'cosponsor', leg)
-
-        # XXX
-        #self.add_action(chamber, session, bill_id, action_chamber, action, date)
-
-    def scrape_session(self, chamber, session):
-        logging.info('scrape_session')
-        return
-
-        url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session, chamber)
-        data = urllib.urlopen(url).read()
-        bill_ids = get_bills_from_session(data)
-
-        for bill_id in bill_ids:
-            self.get_bill_info(session, bill_id)
 
     # Called by LegislationScraper base class.
     #   chamber is either 'lower' or 'upper'.
     def scrape_bills(self, chamber, year):
-        logging.info('scrape_bills')
-        
         for session in year_to_session(year):
             self.scrape_session(chamber, session)
 
-def get_bills_from_session(session_html):
-    soup = BeautifulSoup(session_html)
-    rows = soup.findAll('table')[5].findAll('tr')[1:]
-    bill_ids = []
-    for row in rows:
-        td = row.find('td')
-        bill_id = td.a.contents[0]
-        bill_ids.append(bill_id)
-    return bill_ids
+    def scrape_session(self, chamber, session):
+        logging.info('Scraping session %s %s' % (session, chamber))
+        while True:
+            bill_number = 1
+            url = make_url(chamber, session, bill_number)
+            bill_html = urllib.urlopen(url).read()
+
+
+def parse_bill(session, chamber, bill_number, bill_html):
+    bill_soup = BeautifulSoup(bill_html)
+
+    # XXX 
+    #
+    # self.add_bill(chamber, session, bill_id, bill_title)
+
+    # XXX
+    # self.add_bill_version(chamber, session, bill_id, version_name,
+    # version_url)
+
+    # XXX
+    # self.add_sponsorship(chamber, session, bill_id, 'primary', leg)
+
+    # XXX 
+    # self.add_sponsorship(chamber, session, bill_id, 'cosponsor', leg)
+
+    # XXX
+    # self.add_action(chamber, session, bill_id, action_chamber, action,
+    # date)
+
 
 def make_url(session, chamber, bill_number):
     if chamber == 'upper':
