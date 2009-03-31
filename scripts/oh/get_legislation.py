@@ -6,12 +6,12 @@ import logging
 
 # ugly hack
 import sys
-sys.path.append('./scripts')
-from pyutils.legislation import LegislationScraper, NoDataForYear
+sys.path.append('./scripts/pyutils')
+import legislation
 
 logging.basicConfig(level=logging.DEBUG)
 
-class OHLegislationScraper(LegislationScraper):
+class OHLegislationScraper(legislation.LegislationScraper):
 
     state = 'oh'
 
@@ -66,7 +66,7 @@ class OHLegislationScraper(LegislationScraper):
         chamber = {'lower':'House', 'upper':'Senate'}[chamber]
 
         if year not in year_mapping:
-            raise NoDataForYear(year)
+            raise legislation.NoDataForYear(year)
 	
         for session in year_mapping[year]:
             self.scrape_session(chamber, session)
@@ -95,6 +95,7 @@ def year_to_session(year):
     for session, years in session_dates.iteritems():
         if year in years:
             return session
+    raise legislation.NoDataForYear(year)
 
 if __name__ == '__main__':
     logging.debug('Starting OHLegislationsScraper')

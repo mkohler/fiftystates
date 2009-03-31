@@ -1,5 +1,9 @@
 import unittest
 
+import sys
+sys.path.append('./scripts/pyutils')
+import legislation
+
 import get_legislation
 
 
@@ -11,6 +15,17 @@ class TestOH(unittest.TestCase):
         self.assertEqual(get_legislation.year_to_session(2007), 127)
         self.assertEqual(get_legislation.year_to_session(1998), 122)
         self.assertEqual(get_legislation.year_to_session(1997), 122)
+
+    def test_year_limits(self):
+        self.assertRaises(legislation.NoDataForYear,
+                          get_legislation.year_to_session,
+                          1996)
+        self.assertRaises(legislation.NoDataForYear,
+                          get_legislation.year_to_session,
+                          0)
+        self.assertRaises(legislation.NoDataForYear,
+                          get_legislation.year_to_session,
+                          0.5)
 
 
 
