@@ -59,8 +59,29 @@ class OhioBill(object):
             id = 'SB_%s' % self.number
 
         return ('http://www.legislature.state.oh.us/' +
-                'BillText%s/%s_%s_1_N.html' %
-                (self.session, self.session, self.id))
+                'BillText%s/%s_%s_N.html' %
+                (self.session, self.session, id))
+
+    def make_url_clean_html2(self):
+        if self.chamber == 'lower':
+            id = 'HB_%s' % self.number
+        else:
+            id = 'SB_%s' % self.number
+
+        return ('http://www.legislature.state.oh.us/' +
+                'BillText%s/%s_%s_PHC_N.html' %
+                (self.session, self.session, id))
+
+    def make_url_clean_html3(self):
+        if self.chamber == 'lower':
+            id = 'HB_%s' % self.number
+        else:
+            id = 'SB_%s' % self.number
+
+        return ('http://www.legislature.state.oh.us/' +
+                'BillText%s/%s_%s_I_N.html' %
+                (self.session, self.session, id))
+
 
     def make_url_with_framing(self):
         if self.chamber == 'lower':
@@ -71,6 +92,23 @@ class OhioBill(object):
                      'bills.cfm?ID=%s_SB_%s' % (self.session, self.number))
 
     def parse_bill(self):
+        #
+        # Example code for using html5 to create BeautifulSoup objects.
+        #
+        # # BeautifulSoup from html5lib
+        #import html5lib
+        #from html5lib import treebuilders
+        #import urllib2
+        #
+        #def make_soup():
+        #    fd = urllib2.urlopen('http://mehfilindian.com/LunchMenuTakeOut.htm')
+        #    parser = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("beautifulsoup"))
+        #    minidom_document = parser.parse(fd)
+        #    return minidom_document
+
+        # More info: http://code.google.com/p/html5lib/wiki/UserDocumentation
+        #make_tree = make_dom
+
         soup = BeautifulSoup(self.text)
 
         # XXX 
@@ -107,10 +145,28 @@ class OhioBill(object):
             # For many bills, this is an expected failure.
             logging.debug('%s failed' % self.url)
 
-        self.url = self.make_url_with_framing()
-        logging.info('Retrieved %s' % self.url)
+        self.url = self.make_url_clean_html2()
         self.text = urllib.urlopen(self.url).read()
         if self.has_bill_text():
+            logging.info('Retrieved %s' % self.url)
+            return
+        else:
+            # For many bills, this is an expected failure.
+            logging.debug('%s failed' % self.url)
+
+        self.url = self.make_url_clean_html3()
+        self.text = urllib.urlopen(self.url).read()
+        if self.has_bill_text():
+            logging.info('Retrieved %s' % self.url)
+            return
+        else:
+            # For many bills, this is an expected failure.
+            logging.debug('%s failed' % self.url)
+
+        self.url = self.make_url_with_framing()
+        self.text = urllib.urlopen(self.url).read()
+        if self.has_bill_text():
+            logging.info('Retrieved %s' % self.url)
             return
 
         logging.warn('Could not find bill: chamber %s, year %s, number %s'
