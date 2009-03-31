@@ -17,8 +17,7 @@ class OHLegislationScraper(legislation.LegislationScraper):
     # Called by LegislationScraper base class.
     #   chamber is either 'lower' or 'upper'.
     def scrape_bills(self, chamber, year):
-        for session in year_to_session(year):
-            self.scrape_session(chamber, session)
+        self.scrape_session(chamber, year_to_session(year))
 
     def scrape_session(self, chamber, session):
         logging.info('Scraping session %s %s' % (session, chamber))
@@ -26,6 +25,7 @@ class OHLegislationScraper(legislation.LegislationScraper):
             bill_number = 1
             url = make_url(chamber, session, bill_number)
             bill_html = urllib.urlopen(url).read()
+            logging.debug(bill_html)
 
 
 def parse_bill(session, chamber, bill_number, bill_html):

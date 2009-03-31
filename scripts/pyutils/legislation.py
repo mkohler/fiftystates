@@ -53,7 +53,7 @@ def run_legislation_scraper(get_bills_func):
 
 class LegislationScraper(object):
     option_list = (
-        make_option('-y', '--year', action='append', dest='years',
+        make_option('-y', '--year', action='append', dest='years', type='int',
                     help='year(s) to scrape'),
         make_option('--all', action='store_true', dest='all_years',
                     default=False, help='scrape all data (overrides --year)'),
