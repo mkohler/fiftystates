@@ -14,10 +14,10 @@ class NoDataForYear(Exception):
 
 def run_legislation_scraper(get_bills_func):
     option_list = (
-        make_option('-y', '--year', action='append', dest='years',
-                    help='year(s) to scrape'),
+        make_option('-y', '--year', action='append', dest='years', type='int',
+                    default=45, help='year(s) to scrape'),
         make_option('--all', action='store_true', dest='all_years',
-                    default=False, help='scrape all data (overrides --year)'),
+                    default=True, help='scrape all data (overrides --year)'),
         make_option('--upper', action='store_true', dest='upper', default=False,
                     help='scrape upper chamber'),
         make_option('--lower', action='store_true', dest='lower', default=False,
@@ -56,7 +56,7 @@ class LegislationScraper(object):
         make_option('-y', '--year', action='append', dest='years', type='int',
                     help='year(s) to scrape'),
         make_option('--all', action='store_true', dest='all_years',
-                    default=False, help='scrape all data (overrides --year)'),
+                    default=True, help='scrape all data (overrides --year)'),
         make_option('--upper', action='store_true', dest='upper', default=False,
                     help='scrape upper chamber'),
         make_option('--lower', action='store_true', dest='lower', default=False,

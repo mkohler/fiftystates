@@ -29,10 +29,10 @@ class TestOH(unittest.TestCase):
 
 class TestURLs(unittest.TestCase):
     def test_id(self):
-        bill = get_legislation.OhioBill('upper', 2005, 126, 1)
+        bill = get_legislation.OhioBill('upper', 2005, 1)
         self.assertEqual('SB 1', bill.id)
         self.assertEqual('SB_1', bill.id_url)
-        bill = get_legislation.OhioBill('lower', 2005, 126, 1)
+        bill = get_legislation.OhioBill('lower', 2005, 1)
         self.assertEqual('HB 1', bill.id)
         self.assertEqual('HB_1', bill.id_url)
 
@@ -40,27 +40,27 @@ class TestURLs(unittest.TestCase):
         url = ('http://www.legislature.state.oh.us/' +
                'BillText127/127_HB_1_N.html')
 
-        bill = get_legislation.OhioBill('lower', 2008, 127, 1)
+        bill = get_legislation.OhioBill('lower', 2008, 1)
         self.assertEqual(url, bill.url)
 
     def test_clean2(self):
         url = ('http://www.legislature.state.oh.us/' +
                'BillText127/127_HB_1_PHC_N.html')
-        bill = get_legislation.OhioBill('lower', 2008, 127, 1)
+        bill = get_legislation.OhioBill('lower', 2008, 1)
         bill.url = get_legislation.make_url_2(bill.session, bill.id_url)
         self.assertEqual(url, bill.url)
 
     def test_clean3(self):
         url = ('http://www.legislature.state.oh.us/' +
               'BillText127/127_HB_1_I_N.html')
-        bill = get_legislation.OhioBill('lower', 2008, 127, 1)
+        bill = get_legislation.OhioBill('lower', 2008, 1)
         bill.url = get_legislation.make_url_3(bill.session, bill.id_url)
         self.assertEqual(url, bill.url)
 
     def test_unclean(self):
         url = ('http://www.legislature.state.oh.us/' +
                'bills.cfm?ID=127_HB_1')
-        bill = get_legislation.OhioBill('lower', 2008, 127, 1)
+        bill = get_legislation.OhioBill('lower', 2008, 1)
         bill.url = get_legislation.make_url_framed(bill.session, bill.id_url)
         self.assertEqual(url, bill.url)
 

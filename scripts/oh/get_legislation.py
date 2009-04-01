@@ -1,9 +1,18 @@
 #!/usr/bin/env python
+'''Retrieves Ohio legislation.
 
-import os
-import urllib
+python scripts/oh/get_legislation.py [--year YYYY] [--upper] [--lower]
+
+By default, all legislation is retrieved.
+
+Must be run from the top-level fifty states directory.
+'''
+
 import logging
+import optparse
+import os
 import time
+import urllib
 from BeautifulSoup import BeautifulSoup
 
 # ugly hack
@@ -15,10 +24,15 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s-%(message)s')
 
 # ToDo
 #
-#  Find a way to actually filter down the bills by year.
-#  Terminate the session year.
-#  Don't pass in session and year.
-#  Recorder successfully downloaded URLs.
+#  * Find a way to actually filter down the bills by year.
+#
+#    The bills are organized by session and each session lasts two years,
+#    so if we want to retrieve a single year's worth of bills, we need to
+#    get the date of each bill. The way we currently deal with it is that
+#    we always scrape a whole session (two years), even if only a single
+#    year was requested.
+#
+#  * Handle year ranges
 #
 
 def text_is_a_bill(text):
@@ -56,16 +70,17 @@ def make_url_framed(session, id_url):
              'bills.cfm?ID=%s_%s' % (session, id_url))
 
 class OhioBill(object):
-    def __init__(self, chamber, year, session, number):
-        self.chamber = chamber
+    def __init__(self, year, chamber, number):
         self.year = year
-        self.session = session
+        self.chamber = chamber
+        self.session = year_to_session(year)
         self.number = number
 
         self.filename = self.make_filename()
         self.id = self.make_id()
         self.id_url = self.id.replace(' ', '_')
         self.url = make_url_1(self.session, self.id_url)
+
         self.name = None
         self.version_name = None
         self.text = None
@@ -151,32 +166,48 @@ class OhioBill(object):
 class OHLegislationScraper(legislation.LegislationScraper):
     state = 'oh'
 
-    # Called by LegislationScraper base class.
-    #   chamber is either 'lower' or 'upper'.
-    def scrape_bills(self, chamber, year):
-        self.scrape_session(year, chamber, year_to_session(year))
+    # By default, all years and both chambers are scraped.
+    #
+    # To scrape one chamber, specify '--upper' or '--lower'.
+    # To scrape one year, specify '--year YYYY'
+    def run(self):
+        parser = optparse.OptionParser(option_list=self.option_list)
+        options, args = parser.parse_args()
+        self.scrape_bills(options.upper, options.lower, options.years)
 
-    def scrape_session(self, year, chamber, session):
-        logging.info('Scraping session %s %s house' % (session, chamber))
-        bill_number = 1
-        while True:
-            bill = OhioBill(chamber, year, session, bill_number)
+    def scrape_bills(self, upper=False, lower=False, year_range=None):
+        if year_range:
+            years = year_range
+        else:
+            years = range(1997, int(time.strftime('%Y')) + 1)
 
-            # If we don't have the bill, go get it and save it.
-            if not os.path.isfile(bill.filename):
-                try:
-                    bill.retrieve_bill_text()
-                except legislation.NoDataForYear:
-                    break
-                bill.save_bill_text_as_file()
-                time.sleep(1)            # Give the poor web server a break.
-            else:
-                logging.info('Already have bill %s %s %s' %
-                             (chamber, year, bill_number))
+        chambers = ['upper', 'lower']
+        if upper and not lower:
+            chambers = ['upper']
+        if lower and not upper:
+            chambers = ['lower']
 
-            bill_number += 1
+        for year in years:
+            for chamber in chambers:
+                bill_number = 1
+                while True:
+                    bill = OhioBill(year, chamber, bill_number)
 
+                    # If we don't have the bill, go get it and save it.
+                    if not os.path.isfile(bill.filename):
+                        try:
+                            bill.retrieve_bill_text()
+                        except legislation.NoDataForYear:
+                            logging.info('Stopping.')
+                            break
+                        bill.save_bill_text_as_file()
+                        # Give the poor web server a break.
+                        time.sleep(1)
+                    else:
+                        logging.info('Already have bill %s %s %s' %
+                                     (chamber, year, bill_number))
 
+                    bill_number += 1
 
 
 def year_to_session(year):
