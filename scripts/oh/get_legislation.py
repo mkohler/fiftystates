@@ -21,6 +21,16 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s-%(message)s')
 #  Recorder successfully downloaded URLs.
 #
 
+def text_is_a_bill(text):
+    if not text:
+        return False
+    if 'could not be found' in text:
+        return False
+    if 'You have requested a page that does not exist' in text:
+        return False
+    if 'Bad Request' in text:
+        return False
+    return True
 
 #
 # The make_url_x routines 
@@ -46,12 +56,12 @@ def make_url_framed(session, id_url):
              'bills.cfm?ID=%s_%s' % (session, id_url))
 
 class OhioBill(object):
-#    url_methods = 
     def __init__(self, chamber, year, session, number):
         self.chamber = chamber
         self.year = year
         self.session = session
         self.number = number
+
         self.filename = self.make_filename()
         self.id = self.make_id()
         self.id_url = self.id.replace(' ', '_')
@@ -59,17 +69,6 @@ class OhioBill(object):
         self.name = None
         self.version_name = None
         self.text = None
-
-    def has_bill_text(self):
-        if not self.text:
-            return False
-        if 'could not be found' in self.text:
-            return False
-        if 'You have requested a page that does not exist' in self.text:
-            return False
-        if 'Bad Request' in self.text:
-            return False
-        return True
 
     def make_id(self):
         if self.chamber == 'lower':
@@ -79,8 +78,6 @@ class OhioBill(object):
     def make_filename(self):
         return 'data/oh/%s_%s_%s.html' % (self.session, self.chamber,
                                           self.number)
-
-
 
     def parse_bill(self):
         #
@@ -127,38 +124,18 @@ class OhioBill(object):
     # text along with the headers and menus.
     #
     def retrieve_bill_text(self):
-        self.text = urllib.urlopen(self.url).read()
+        url_methods = (make_url_1, make_url_2, make_url_3, make_url_framed)
 
-        if self.has_bill_text():
-            logging.info('Retrieved %s' % self.url)
-            return
-        else:
-            # For many bills, this is an expected failure.
-            logging.debug('%s failed' % self.url)
+        for url_method in url_methods:
+            self.url = url_method(self.session, self.id_url)
+            self.text = urllib.urlopen(self.url).read()
 
-        self.url = self.make_url_clean_html2()
-        self.text = urllib.urlopen(self.url).read()
-        if self.has_bill_text():
-            logging.info('Retrieved %s' % self.url)
-            return
-        else:
-            # For many bills, this is an expected failure.
-            logging.debug('%s failed' % self.url)
-
-        self.url = self.make_url_clean_html3()
-        self.text = urllib.urlopen(self.url).read()
-        if self.has_bill_text():
-            logging.info('Retrieved %s' % self.url)
-            return
-        else:
-            # For many bills, this is an expected failure.
-            logging.debug('%s failed' % self.url)
-
-        self.url = self.make_url_with_framing()
-        self.text = urllib.urlopen(self.url).read()
-        if self.has_bill_text():
-            logging.info('Retrieved %s' % self.url)
-            return
+            if text_is_a_bill(self.text):
+                logging.info('Retrieved %s' % self.url)
+                return
+            else:
+                # For many bills, this is an expected failure.
+                logging.debug('%s failed' % self.url)
 
         logging.warn('Could not find bill: chamber %s, year %s, number %s'
                      % (self.chamber, self.year, self.number))
