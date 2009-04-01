@@ -47,21 +47,21 @@ class TestURLs(unittest.TestCase):
         url = ('http://www.legislature.state.oh.us/' +
                'BillText127/127_HB_1_PHC_N.html')
         bill = get_legislation.OhioBill('lower', 2008, 127, 1)
-        bill.url = bill.make_url2()
+        bill.url = get_legislation.make_url_2(bill.session, bill.id_url)
         self.assertEqual(url, bill.url)
 
     def test_clean3(self):
         url = ('http://www.legislature.state.oh.us/' +
               'BillText127/127_HB_1_I_N.html')
         bill = get_legislation.OhioBill('lower', 2008, 127, 1)
-        bill.url = bill.make_url3()
+        bill.url = get_legislation.make_url_3(bill.session, bill.id_url)
         self.assertEqual(url, bill.url)
 
     def test_unclean(self):
         url = ('http://www.legislature.state.oh.us/' +
                'bills.cfm?ID=127_HB_1')
         bill = get_legislation.OhioBill('lower', 2008, 127, 1)
-        bill.url = bill.make_url_with_framing()
+        bill.url = get_legislation.make_url_framed(bill.session, bill.id_url)
         self.assertEqual(url, bill.url)
 
 

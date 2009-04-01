@@ -21,6 +21,30 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s-%(message)s')
 #  Recorder successfully downloaded URLs.
 #
 
+
+#
+# The make_url_x routines 
+#
+
+def make_url_1(session, id_url):
+    return ('http://www.legislature.state.oh.us/' +
+            'BillText%s/%s_%s_N.html' %
+            (session, session, id_url))
+
+def make_url_2(session, id_url):
+    return ('http://www.legislature.state.oh.us/' +
+            'BillText%s/%s_%s_PHC_N.html' %
+            (session, session, id_url))
+
+def make_url_3(session, id_url):
+    return ('http://www.legislature.state.oh.us/' +
+            'BillText%s/%s_%s_I_N.html' %
+            (session, session, id_url))
+
+def make_url_framed(session, id_url):
+    return ( 'http://www.legislature.state.oh.us/' +
+             'bills.cfm?ID=%s_%s' % (session, id_url))
+
 class OhioBill(object):
 #    url_methods = 
     def __init__(self, chamber, year, session, number):
@@ -31,7 +55,7 @@ class OhioBill(object):
         self.filename = self.make_filename()
         self.id = self.make_id()
         self.id_url = self.id.replace(' ', '_')
-        self.url = self.make_url1()
+        self.url = make_url_1(self.session, self.id_url)
         self.name = None
         self.version_name = None
         self.text = None
@@ -56,28 +80,7 @@ class OhioBill(object):
         return 'data/oh/%s_%s_%s.html' % (self.session, self.chamber,
                                           self.number)
 
-    def make_url1(self):
-        return ('http://www.legislature.state.oh.us/' +
-                'BillText%s/%s_%s_N.html' %
-                (self.session, self.session, self.id_url))
 
-    def make_url2(self):
-        return ('http://www.legislature.state.oh.us/' +
-                'BillText%s/%s_%s_PHC_N.html' %
-                (self.session, self.session, self.id_url))
-
-    def make_url3(self):
-        return ('http://www.legislature.state.oh.us/' +
-                'BillText%s/%s_%s_I_N.html' %
-                (self.session, self.session, self.id_url))
-
-    def make_url_with_framing(self):
-        if self.chamber == 'lower':
-            return ( 'http://www.legislature.state.oh.us/' +
-                     'bills.cfm?ID=%s_HB_%s' % (self.session, self.number))
-        else:
-            return ('http://www.legislature.state.oh.us/' +
-                     'bills.cfm?ID=%s_SB_%s' % (self.session, self.number))
 
     def parse_bill(self):
         #
